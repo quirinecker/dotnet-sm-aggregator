@@ -5,30 +5,38 @@ using TwitchLib.Api;
 
 class Program {
 	static async Task Main(string[] args) {
-		const string clientId = "";
-		const string clientSecret = "";
-		var twitchChannels = new List<string> { "FunkyGamer_12" };
+		const string clientId = "g79z2bul0nr87ju79sf7jdtc43vbw2";
+		const string clientSecret = "ldhb631jod1fstu0vf4fenu7d6ak0o";
+		var twitchChannels = new List<string> {"papaplatte"};
 
 
 		ITwitchAPI api = new TwitchAPI();
 		api.Settings.ClientId = clientId;
 		api.Settings.Secret = clientSecret;
 
-		var response = await api.Helix.Users.GetUsersAsync(logins: twitchChannels);
+		var usersResponse = await api.Helix.Users.GetUsersAsync(logins: twitchChannels);
 
-		if (response.Users.Count() < 1) {
-			Console.WriteLine("No users found");
-		}
+        if (usersResponse.Users != null && usersResponse.Users.Length > 0)
+        {
+            var papaplatteUser = usersResponse.Users.FirstOrDefault(u => u.Login.ToLower() == "papaplatte");
 
-		var firstResult = response.Users.First();
-		var email = firstResult.Email == null ? "no email" : firstResult.Email;
-		Console.WriteLine($"Found {firstResult.Id}");
-
-		var followers = await api.Helix.Users.GetUsersFollowsAsync(toId: firstResult.Id, first: 1);
-
-		Console.WriteLine($"{twitchChannels.First()} has {followers.Follows.Count()} followers: ");
-		foreach (var follower in followers.Follows) {
-			Console.WriteLine($"{follower.FromUserName}");
-		}
-	}
+            if (papaplatteUser != null)
+            {
+                string userId = papaplatteUser.Id;
+                // Get channel information using the user ID (broadcaster ID)
+                var channelInfoResponse = await api.Helix.Channels.GetChannelInformationAsync(broadcasterId: userId);
+                Console.WriteLine("\nChannel Information:");
+                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(channelInfoResponse.Data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                Console.WriteLine($"Could not find user information for channel: papaplatte");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Could not retrieve user information.");
+        }
+    }
+		
 }
