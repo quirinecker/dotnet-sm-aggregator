@@ -2,16 +2,26 @@
 
 using TwitchLib.Api.Interfaces;
 using TwitchLib.Api;
+using TwitchLib.Api.Helix.Models.Streams.GetStreams;
+using TwitchLib.Api.Helix.Models.Games;
+using TwitchLib.PubSub.Models.Responses;
+using System.Diagnostics;
 
 class Program {
+
+    private TwitchAPI api = new TwitchAPI();
+
 	static async Task Main(string[] args) {
+        var program = new Program();
+        await program.run();
+    }	
+
+    async Task run() {
 		const string clientId = "g79z2bul0nr87ju79sf7jdtc43vbw2";
 		const string clientSecret = "ldhb631jod1fstu0vf4fenu7d6ak0o";
 		var twitchChannels = new List<string> {"papaplatte"};
 
-
-		ITwitchAPI api = new TwitchAPI();
-		api.Settings.ClientId = clientId;
+        api.Settings.ClientId = clientId;
 		api.Settings.Secret = clientSecret;
 
 		var usersResponse = await api.Helix.Users.GetUsersAsync(logins: twitchChannels);
@@ -25,21 +35,39 @@ class Program {
             return;
         }
 
-        var gameIds = topGamesRespose.Data.Select(game => game.Id);
-        var fetchTasks = new List<Task<TwitchLib.Api.Helix.Models.Streams.GetStreams.GetStreamsResponse>>();
+        var fetchTasks = topGamesRespose.Data.Select(game => {
+            return api.Helix.Streams.GetStreamsAsync(gameIds: [game.Id], first: 100);
+        }).ToList();
+
+        var syncStopWatch = new Stopwatch();
+        syncStopWatch.Start();
+		PrintResult(await GetSync(fetchTasks));
+        syncStopWatch.Stop();
         
-		foreach (var game in topGamesRespose.Data)
+		
+		var asyncStopWatch = new Stopwatch();
+        asyncStopWatch.Start();
+        PrintResult(await GetAsync(fetchTasks));
+        asyncStopWatch.Stop();
+		Console.WriteLine($"SyncTime: {syncStopWatch.ElapsedMilliseconds}");
+		Console.WriteLine($"AsyncTime: {asyncStopWatch.ElapsedMilliseconds}");
+    }
+
+	async Task<GetStreamsResponse[]> GetSync(List<Task<GetStreamsResponse>> fetchTasks) {
+        var responses = new List<GetStreamsResponse>();
+		foreach (var task in fetchTasks)
 		{
-            fetchTasks.Add(api.Helix.Streams.GetStreamsAsync(gameIds: [game.Id], first: 100));
+			responses.Add(await task);
 		}
 
+		return responses.ToArray();
+	}
+	async Task<GetStreamsResponse[]> GetAsync(List<Task<GetStreamsResponse>> fetchTasks) {
         var responses = await Task.WhenAll(tasks: fetchTasks);
+		return responses;
+	}
 
-        if (responses == null) {
-            Console.WriteLine("something went wrong oder so");
-            return; 
-        }
-
+    void PrintResult(GetStreamsResponse[] responses) {
         var count = 0;
         foreach (var response in responses) {
             foreach (var stream in response.Streams) {
@@ -50,20 +78,6 @@ class Program {
         }
 
         Console.WriteLine($"total: {count}");
-        
-        var papaplatteUser = usersResponse.Users.FirstOrDefault(u => u.Login.ToLower() == "papaplatte");
+    }
 
-        if (papaplatteUser != null)
-        {
-            string userId = papaplatteUser.Id;
-            // Get channel information using the user ID (broadcaster ID)
-            var channelInfoResponse = await api.Helix.Channels.GetChannelInformationAsync(broadcasterId: userId);
-            Console.WriteLine("\nChannel Information:");
-            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(channelInfoResponse.Data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            Console.WriteLine($"Could not find user information for channel: papaplatte");
-        }
-    }	
 }
