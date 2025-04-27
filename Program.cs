@@ -16,27 +16,54 @@ class Program {
 
 		var usersResponse = await api.Helix.Users.GetUsersAsync(logins: twitchChannels);
 
-        if (usersResponse.Users != null && usersResponse.Users.Length > 0)
-        {
-            var papaplatteUser = usersResponse.Users.FirstOrDefault(u => u.Login.ToLower() == "papaplatte");
+		var gamesResponse = await api.Helix.Games.GetGamesAsync(gameNames: new List<string> { "Minecraft" });
 
-            if (papaplatteUser != null)
-            {
-                string userId = papaplatteUser.Id;
-                // Get channel information using the user ID (broadcaster ID)
-                var channelInfoResponse = await api.Helix.Channels.GetChannelInformationAsync(broadcasterId: userId);
-                Console.WriteLine("\nChannel Information:");
-                Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(channelInfoResponse.Data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+		var topGamesRespose = await api.Helix.Games.GetTopGamesAsync();
+
+        if (usersResponse.Users == null || usersResponse.Users.Length == 0) {
+            Console.WriteLine("Could not retrieve user information.");
+            return;
+        }
+
+        var gameIds = topGamesRespose.Data.Select(game => game.Id);
+        var fetchTasks = new List<Task<TwitchLib.Api.Helix.Models.Streams.GetStreams.GetStreamsResponse>>();
+        
+		foreach (var game in topGamesRespose.Data)
+		{
+            fetchTasks.Add(api.Helix.Streams.GetStreamsAsync(gameIds: [game.Id], first: 100));
+		}
+
+        var responses = await Task.WhenAll(tasks: fetchTasks);
+
+        if (responses == null) {
+            Console.WriteLine("something went wrong oder so");
+            return; 
+        }
+
+        var count = 0;
+        foreach (var response in responses) {
+            foreach (var stream in response.Streams) {
+                Console.WriteLine($"({count}) {stream.GameName}: {stream.Title}");
+                count++;
             }
-            else
-            {
-                Console.WriteLine($"Could not find user information for channel: papaplatte");
-            }
+            Console.WriteLine("==============================");
+        }
+
+        Console.WriteLine($"total: {count}");
+        
+        var papaplatteUser = usersResponse.Users.FirstOrDefault(u => u.Login.ToLower() == "papaplatte");
+
+        if (papaplatteUser != null)
+        {
+            string userId = papaplatteUser.Id;
+            // Get channel information using the user ID (broadcaster ID)
+            var channelInfoResponse = await api.Helix.Channels.GetChannelInformationAsync(broadcasterId: userId);
+            Console.WriteLine("\nChannel Information:");
+            Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(channelInfoResponse.Data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
         }
         else
         {
-            Console.WriteLine("Could not retrieve user information.");
+            Console.WriteLine($"Could not find user information for channel: papaplatte");
         }
-    }
-		
+    }	
 }
