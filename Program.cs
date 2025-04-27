@@ -1,10 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using TwitchLib.Api.Interfaces;
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Streams.GetStreams;
-using TwitchLib.Api.Helix.Models.Games;
-using TwitchLib.PubSub.Models.Responses;
 using System.Diagnostics;
 
 class Program {
@@ -14,7 +11,7 @@ class Program {
 	static async Task Main(string[] args) {
         var program = new Program();
         await program.run();
-    }	
+    }
 
     async Task run() {
 		const string clientId = "g79z2bul0nr87ju79sf7jdtc43vbw2";
@@ -23,35 +20,34 @@ class Program {
         api.Settings.ClientId = clientId;
 		api.Settings.Secret = clientSecret;
 
-		var setupStopWatch = new Stopwatch();
-        setupStopWatch.Start();
+		var stopWatch = new Stopwatch();
+
 		var topGamesRespose = await api.Helix.Games.GetTopGamesAsync();
-        setupStopWatch.Stop();
 
-        var fetchTasks = topGamesRespose.Data.Select(game => {
-            return api.Helix.Streams.GetStreamsAsync(gameIds: [game.Id], first: 100);
-        }).ToList();
+		foreach (var _ in Enumerable.Range(0, 10)) {
+			var fetchTasks = topGamesRespose.Data
+				.Select(game => api.Helix.Streams.GetStreamsAsync(gameIds: [game.Id], first: 100))
+				.ToList();
 
-        var syncStopWatch = new Stopwatch();
-        syncStopWatch.Start();
-		var syncResults = await GetSync(fetchTasks);
-		//PrintResult(await GetSync(fetchTasks));
-        syncStopWatch.Stop();
-        
-		
-		var asyncStopWatch = new Stopwatch();
-        asyncStopWatch.Start();
-		var asyncResults = await GetAsync(fetchTasks);
-        //PrintResult(await GetAsync(fetchTasks));
-        asyncStopWatch.Stop();
+			await meassure("async", fetchTasks);
+		}
 
-		Console.WriteLine($"{syncResults.Count()}");
-		Console.WriteLine($"{asyncResults.Count()}");
-
-		Console.WriteLine($"SetUpTime: {setupStopWatch.ElapsedMilliseconds}");
-		Console.WriteLine($"SyncTime: {syncStopWatch.ElapsedMilliseconds}");
-		Console.WriteLine($"AsyncTime: {asyncStopWatch.ElapsedMilliseconds}");
     }
+
+	async Task meassure(string choice, List<Task<GetStreamsResponse>> fetchTasks) {
+		var stopWatch = new Stopwatch();
+
+		stopWatch.Start();
+		if (choice == "sync") {
+			await GetSync(fetchTasks);
+		}
+		else if (choice == "async") {
+			await GetAsync(fetchTasks);
+		}
+		stopWatch.Stop();
+
+		Console.WriteLine($"time: {stopWatch.ElapsedMilliseconds}");
+	}
 
 	async Task<GetStreamsResponse[]> GetSync(List<Task<GetStreamsResponse>> fetchTasks) {
         var responses = new List<GetStreamsResponse>();
