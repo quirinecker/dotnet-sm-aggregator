@@ -19,21 +19,14 @@ class Program {
     async Task run() {
 		const string clientId = "g79z2bul0nr87ju79sf7jdtc43vbw2";
 		const string clientSecret = "ldhb631jod1fstu0vf4fenu7d6ak0o";
-		var twitchChannels = new List<string> {"papaplatte"};
 
         api.Settings.ClientId = clientId;
 		api.Settings.Secret = clientSecret;
 
-		var usersResponse = await api.Helix.Users.GetUsersAsync(logins: twitchChannels);
-
-		var gamesResponse = await api.Helix.Games.GetGamesAsync(gameNames: new List<string> { "Minecraft" });
-
+		var setupStopWatch = new Stopwatch();
+        setupStopWatch.Start();
 		var topGamesRespose = await api.Helix.Games.GetTopGamesAsync();
-
-        if (usersResponse.Users == null || usersResponse.Users.Length == 0) {
-            Console.WriteLine("Could not retrieve user information.");
-            return;
-        }
+        setupStopWatch.Stop();
 
         var fetchTasks = topGamesRespose.Data.Select(game => {
             return api.Helix.Streams.GetStreamsAsync(gameIds: [game.Id], first: 100);
@@ -41,14 +34,21 @@ class Program {
 
         var syncStopWatch = new Stopwatch();
         syncStopWatch.Start();
-		PrintResult(await GetSync(fetchTasks));
+		var syncResults = await GetSync(fetchTasks);
+		//PrintResult(await GetSync(fetchTasks));
         syncStopWatch.Stop();
         
 		
 		var asyncStopWatch = new Stopwatch();
         asyncStopWatch.Start();
-        PrintResult(await GetAsync(fetchTasks));
+		var asyncResults = await GetAsync(fetchTasks);
+        //PrintResult(await GetAsync(fetchTasks));
         asyncStopWatch.Stop();
+
+		Console.WriteLine($"{syncResults.Count()}");
+		Console.WriteLine($"{asyncResults.Count()}");
+
+		Console.WriteLine($"SetUpTime: {setupStopWatch.ElapsedMilliseconds}");
 		Console.WriteLine($"SyncTime: {syncStopWatch.ElapsedMilliseconds}");
 		Console.WriteLine($"AsyncTime: {asyncStopWatch.ElapsedMilliseconds}");
     }
