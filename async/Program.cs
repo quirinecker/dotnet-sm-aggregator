@@ -1,4 +1,5 @@
 ﻿using TwitchLib.Api;
+using System.Text.Json;
 
 class Program
 {
@@ -23,12 +24,19 @@ class Program
 		var fetchStage = new FetchStage(api, true);
 		var (fetchTime, fetchResult) = await fetchStage.Meassure();
 
+
 		if (fetchResult is null)
 		{
 			Console.WriteLine("Fetching failed");
 			return;
 		}
 
+		//Console.WriteLine(fetchResult.UsersResponse);
+		//Console.WriteLine(fetchResult.StreamsResponses);
+		Console.WriteLine(JsonSerializer.Serialize(fetchResult.StreamsResponses.Take(1)));
+		Console.WriteLine(JsonSerializer.Serialize(fetchResult.UsersResponse.Take(1)));
+
+		var processStage = new ProcessStage(fetchResult);
 	}
 
 	void SetCredentials()
@@ -39,6 +47,4 @@ class Program
 		api.Settings.ClientId = clientId;
 		api.Settings.Secret = clientSecret;
 	}
-
-
 }
