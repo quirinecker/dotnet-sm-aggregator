@@ -21,7 +21,7 @@ class Program
 	{
 		SetCredentials();
 
-		var fetchStage = new FetchStage(api, true);
+		var fetchStage = new FetchStage(api, isDryRun);
 		var (fetchTime, fetchResult) = await fetchStage.Meassure();
 
 
@@ -31,12 +31,21 @@ class Program
 			return;
 		}
 
-		//Console.WriteLine(fetchResult.UsersResponse);
-		//Console.WriteLine(fetchResult.StreamsResponses);
-		Console.WriteLine(JsonSerializer.Serialize(fetchResult.StreamsResponses.Take(1)));
-		Console.WriteLine(JsonSerializer.Serialize(fetchResult.UsersResponse.Take(1)));
-
 		var processStage = new ProcessStage(fetchResult);
+		var (processTime, processResult) = await processStage.Meassure();
+		var processStreamResult = processResult.streamResult;
+		var processUserResult = processResult.userResult;
+		
+		// Console.WriteLine(processResult.gameStreamTime.Count());
+		// foreach(var result in processResult.gameStreamTime.AsEnumerable())  {
+		// 	Console.WriteLine($"{result.Key}: {result.Value.Item2}");
+		// }
+		Console.WriteLine(processStreamResult.streamCount);
+		Console.WriteLine(processStreamResult.matureContent);
+
+		Console.WriteLine($"{(double) processStreamResult.matureContent / processStreamResult.streamCount}");
+		Console.WriteLine(JsonSerializer.Serialize(processUserResult.streamerTypeDistribution));
+		Console.WriteLine(JsonSerializer.Serialize(processUserResult.userTypeDistribution));
 	}
 
 	void SetCredentials()
