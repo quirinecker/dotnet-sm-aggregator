@@ -1,5 +1,5 @@
 {
-	"exec": ["dotnet", "run", "--project", "./async"],
-	"execWarmup": ["dotnet", "run", "--project", "./async", "--dry"],
-	"stages": ["fetch"]
+	"Exec": ["dotnet", "run", "--project", "./async"],
+	"ExecWarmup": ["dotnet", "run", "--project", "./async", "--dry"],
+	"Stages": ["fetch"]
 }
