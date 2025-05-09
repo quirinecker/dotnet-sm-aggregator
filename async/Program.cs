@@ -35,24 +35,11 @@ class Program
 
 		var processStage = new ProcessStage(fetchResult);
 		var (processTime, processResult) = await processStage.Meassure();
-		//var processStreamResult = processResult.streamResult;
-		//var processUserResult = processResult.userResult;
 
 		if (!this.noPrint) {
 			var printStage = new PrintStage(processResult);
 			await printStage.Run();
 		}
-
-		// Console.WriteLine(processResult.gameStreamTime.Count());
-		// foreach(var result in processResult.gameStreamTime.AsEnumerable())  {
-		// 	Console.WriteLine($"{result.Key}: {result.Value.Item2}");
-		// }
-		//Console.WriteLine(processStreamResult.streamCount);
-		//Console.WriteLine(processStreamResult.matureContent);
-
-		//Console.WriteLine($"{(double) processStreamResult.matureContent / processStreamResult.streamCount}");
-		//Console.WriteLine(JsonSerializer.Serialize(processUserResult.streamerTypeDistribution));
-		//Console.WriteLine(JsonSerializer.Serialize(processUserResult.userTypeDistribution));
 
 		Console.WriteLine($"{fetchTime},{processTime}");
 	}
