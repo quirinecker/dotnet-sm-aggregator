@@ -64,7 +64,7 @@ public class PrintStage : Stage<PrintStage?>
 
 		foreach (var timeResult in result.gameStreamTime)
 		{
-			output += $"{timeResult.Key} {timeResult.Value.Item2}";
+			output += $"{timeResult.Key};{timeResult.Value.Item2}";
 			output += "\n";
 		}
 

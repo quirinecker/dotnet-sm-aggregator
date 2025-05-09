@@ -53,6 +53,38 @@ print_stream_stats <- function() {
   dev.off()
 }
 
+print_time_stats <- function() {
+  frame <- read.csv(
+    "./csv/stream_time_stats.csv",
+    header = TRUE, sep = ";",
+    stringsAsFactors = FALSE
+  )
 
+  head_frame <- head(frame[order(frame$Time, decreasing = TRUE), ], n = 10)
+
+  png(paste("./statistics/time.png", sep = ""))
+  par(mar = c(5, 10, 4, 2)) # Increase the left margin (second value)
+  barplot(head_frame$Time, names.arg = head_frame$Streamer, horiz = TRUE, las = 2)
+  dev.off()
+}
+
+print_streamer_type_stats <- function() {
+  frame <- read.csv(
+    "./csv/streamer_type_stats.csv",
+    header = TRUE, sep = ";",
+    stringsAsFactors = FALSE
+  )
+
+  print(frame)
+
+  png(paste("./statistics/streamer_type.png", sep = ""))
+  pie(as.numeric(frame[1, ]), labels = colnames(frame))
+  dev.off()
+}
+
+
+print_streamer_type_stats()
+
+# print_time_stats()
 # print_language_stats()
-print_stream_stats()
+# print_stream_stats()
