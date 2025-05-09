@@ -67,7 +67,7 @@ public class PrintStage : Stage<PrintStage?>
             output += "\n";
         }
 
-        File.WriteAllText("./streamer_type_stats.csv", output);
+        File.WriteAllText("./stream_time_stats.csv", output);
     }
 
     public void WriteStreamStats()

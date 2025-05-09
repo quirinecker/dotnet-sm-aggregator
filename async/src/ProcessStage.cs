@@ -9,24 +9,19 @@ using TwitchUser = TwitchLib.Api.Helix.Models.Users.GetUsers.User;
 
 public class StreamProcessResult 
 {
-
-    // --- Data for specific game ---
     required public (string, long, Dictionary<string, long>)[] gameViewer {get; set;} //game, viewer per game (how many people are watching this game in total)
     // required public (string, long)[] avgGameViewer; //game, viewers (oben durch die games)
     required public Dictionary<string, (TwitchStream, double)> gameStreamTime; //how long is the game streamed in total 
 
-    required public long matureContent;
+    required public long matureContent; //number of mature content streams
 
-    required public long streamCount;
-    
-
+    required public long streamCount; // number of streams
 }
 
 public class UserProcessResult
 {
-    required public long[] userTypeDistribution; //Twtich Admin, global mod,... (4)
+    required public long[] userTypeDistribution; //Twtich Admin, global mod, Twith staff, normal user (4)
     required public long[] streamerTypeDistribution; //partner, affiliate, nothing
-
 }
 
 public class ProcessResult
@@ -76,14 +71,8 @@ public class ProcessStage(FetchResult FetchedData) : Stage<ProcessResult?>("proc
 
     private async Task<StreamProcessResult?> computeStreams(TwitchStream[] streams)
     {
-        // It's good practice to simulate async work if the method is marked async
-        // but doesn't have any await calls. Or simply return Task.FromResult if it's purely synchronous.
-        // However, for simplicity in this transformation, we can just let the compiler handle it.
-
         if (streams == null || !streams.Any())
         {
-            // Decide how to handle empty streams. Return null, an empty ProcessResult, or throw.
-            // For aggregation, returning an empty ProcessResult might be better than null.
             return new StreamProcessResult { 
                 gameViewer = Array.Empty<(string, long, Dictionary<String, long>)>(),
                 gameStreamTime = [],
@@ -92,39 +81,34 @@ public class ProcessStage(FetchResult FetchedData) : Stage<ProcessResult?>("proc
             };
         }
 
-        // Simulate some processing if needed, or directly compute
-        // For Task.Run, you'd wrap the synchronous part.
-        // For a simple async method, you can just compute and return.
-        // If there were actual async operations here (e.g., another API call), you would await them.
-
-        await Task.Yield(); // Ensures it behaves as an async method, yielding control briefly.
-                        // Or use Task.CompletedTask if no real async work after this point.
+        await Task.Yield(); 
 
         var viewerCount = (long)streams.Sum(stream => stream.ViewerCount);
-        var gameName = streams.First().GameName; // Assumes streams is not empty due to the check above
+        var gameName = streams.First().GameName;
         
-
         var languagePerGame = new Dictionary<string, long>();
         var streamTime = new Dictionary<string, (TwitchStream, double)>();
         var streamCount = 0;
         var matureCount = 0;
 
         foreach (var stream in streams) {
-            if (languagePerGame.ContainsKey(stream.Language)) {
+            if (languagePerGame.ContainsKey(stream.Language)) 
+            {
                 languagePerGame[stream.Language] = ++languagePerGame[stream.Language];
             } else {
                 languagePerGame[stream.Language] = 1;
             }
 
-            if (!streamTime.ContainsKey(stream.UserName)) {
+            if (!streamTime.ContainsKey(stream.UserName)) 
+            {
                 var streamDuration = DateTime.Now - stream.StartedAt;
                 streamTime[stream.UserName] = (stream, streamDuration.TotalHours - 2);
             }
 
-            if (stream.IsMature) {
+            if (stream.IsMature) 
+            {
                 matureCount++;
             }
-
             streamCount++;
         }
 
@@ -135,7 +119,6 @@ public class ProcessStage(FetchResult FetchedData) : Stage<ProcessResult?>("proc
             gameStreamTime = streamTime,
             streamCount = streamCount,
             matureContent = matureCount
-            // Initialize other fields as needed
         };
     }   
 
@@ -143,10 +126,10 @@ public class ProcessStage(FetchResult FetchedData) : Stage<ProcessResult?>("proc
     {
         if (users == null || !users.Any())
         {
-            return new UserProcessResult { 
+            return new UserProcessResult 
+            { 
                 userTypeDistribution = [],
                 streamerTypeDistribution = []
-
             };
         }
         await Task.Yield();
@@ -161,21 +144,28 @@ public class ProcessStage(FetchResult FetchedData) : Stage<ProcessResult?>("proc
         var normalStreamerCount = 0;
 
         foreach(var user in users) {
-            if (user.Type == "admin" ) {
+            if (user.Type == "admin" ) 
+            {
                 twitchAdminCount++;
-            } else if ( user.Type =="global_mod") {
+            } else if ( user.Type =="global_mod") 
+            {
                 globalModCount++;
-            } else if (user.Type == "staff") {
+            } else if (user.Type == "staff") 
+            {
                 twitchStaffCount++;
-            } else {
+            } else 
+            {
                 normalUserCount++;
             }
 
-            if (user.BroadcasterType == "affiliate") {
+            if (user.BroadcasterType == "affiliate") 
+            {
                 affiliateCount++;
-            } else if (user.BroadcasterType == "partner") {
+            } else if (user.BroadcasterType == "partner") 
+            {
                 partnerCount++;
-            } else {
+            } else 
+            {
                 normalStreamerCount++;
             }
         }
