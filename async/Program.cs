@@ -59,8 +59,8 @@ class Program
 
 	void SetCredentials()
 	{
-		const string clientId = "g79z2bul0nr87ju79sf7jdtc43vbw2";
-		const string clientSecret = "ldhb631jod1fstu0vf4fenu7d6ak0o";
+		const string clientId = "";
+		const string clientSecret = "";
 
 		api.Settings.ClientId = clientId;
 		api.Settings.Secret = clientSecret;
