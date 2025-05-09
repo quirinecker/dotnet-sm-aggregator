@@ -60,7 +60,6 @@ class Program
 
 		var averagedResult = Tuple.Create(finalResult.Item1.Select(x => (float)x / 10).ToList(), (float)finalResult.Item2 / 10);
 
-		Console.WriteLine($"Avg Time: {finalResult.Item2}/{10}");
 		Console.WriteLine($"Avg Time: {averagedResult.Item2}");
 
 		if (intermediates == null)
@@ -103,6 +102,7 @@ class Program
 		{
 			return [];
 		}
+		JsonSerializer.Serialize(output);
 		var segments = output.Split(",").Select(int.Parse);
 		return segments.ToList();
 	}

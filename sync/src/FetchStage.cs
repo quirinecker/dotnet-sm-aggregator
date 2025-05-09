@@ -3,10 +3,8 @@ using TwitchLib.Api.Helix.Models.Streams.GetStreams;
 using TwitchLib.Api;
 using System.Text.Json;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
-using TwitchLib.Api.Helix.Models.Channels.GetChannelInformation;
 
-public class FetchResult
-{
+public class FetchResult {
 	public required GetStreamsResponse[] StreamsResponses;
 	public required GetUsersResponse[] UsersResponse;
 }
@@ -29,8 +27,7 @@ public class FetchStage : Stage<FetchResult?>
 		{
 			string streamsContent = File.ReadAllText("./streams.json");
 			string usersContent = File.ReadAllText("./users.json");
-			return new FetchResult
-			{
+			return new FetchResult {
 				StreamsResponses = JsonSerializer.Deserialize<GetStreamsResponse[]>(streamsContent),
 				UsersResponse = JsonSerializer.Deserialize<GetUsersResponse[]>(usersContent)
 			};
@@ -42,18 +39,25 @@ public class FetchStage : Stage<FetchResult?>
 			.Select(game => Api.Helix.Streams.GetStreamsAsync(gameIds: [game.Id], first: 100))
 			.ToList();
 
-		var streamResult = await Task.WhenAll(tasks: fetchStreamTasks);
+		var streamsResult = new List<GetStreamsResponse>();
 
-		var fetchUserTasks = streamResult.Select(gameStreams => Api.Helix.Users.GetUsersAsync(
+		foreach (var task in fetchStreamTasks) {
+			streamsResult.Add(await task);
+		}
+
+		var fetchUserTasks = streamsResult.Select(gameStreams => Api.Helix.Users.GetUsersAsync(
 			ids: [.. gameStreams.Streams.Select(stream => stream.UserId)]
-		));
+        ));
 
-		var usersResult = await Task.WhenAll(tasks: fetchUserTasks);
+		var usersResult = new List<GetUsersResponse>();
 
-		var fetchResult = new FetchResult
-		{
-			StreamsResponses = streamResult,
-			UsersResponse = usersResult
+		foreach (var task in fetchUserTasks) {
+			usersResult.Add(await task);
+		}
+
+		var fetchResult = new FetchResult {
+			StreamsResponses = streamsResult.ToArray(),
+			UsersResponse = usersResult.ToArray()
 		};
 
 		if (!(File.Exists("./streams.json") || File.Exists("./users.json")))
@@ -61,7 +65,6 @@ public class FetchStage : Stage<FetchResult?>
 			File.WriteAllText("./streams.json", JsonSerializer.Serialize(fetchResult.StreamsResponses));
 			File.WriteAllText("./users.json", JsonSerializer.Serialize(fetchResult.UsersResponse));
 		}
-
 
 		return fetchResult;
 	}
